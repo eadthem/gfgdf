@@ -38,13 +38,13 @@ class drive
 		$this->startTime;
 		$this->pid = 0;
 		$this->mode="fault";
-		$this->SureAnswer = n;
+		$this->SureAnswer = 'n';
 		//echo "Drive at : ".$drivePath.PHP_EOL;
 		$this->drivePath = $drivePath;
 		$this->driveName = $driveName;
 		$this->smartError == true;
 		
-		$this->HWPath = trim(shell_exec('udevadm info -q all -n '.$this->drivePath.' | grep DEVPATH'));
+		$this->HWPath = substr(trim(shell_exec('udevadm info -q all -n '.$this->drivePath.' | grep DEVPATH')),3);
 		
 		shell_exec("smartctl --smart=on --offlineauto=on --saveauto=on ".$this->drivePath);
 		
@@ -93,7 +93,7 @@ class drive
 	function printDriveIdent($state = "")
 	{
 		echo"Drive = ".$this->drivePath.' IS '.$this->family.';  '.$this->model.';  '.$this->serial.';  '.$this->size.PHP_EOL.
-		'pid='.$this->pid.'  '.$state.'    '.$this->HWPath.PHP_EOL;
+		'pid='.$this->pid.'  '.$state.'  '.$this->HWPath.PHP_EOL;
 	}
 	
 	function printPartitonInfo()
@@ -110,7 +110,7 @@ class drive
 		$this->printPartitonInfo();
 		while(true)
 		{
-			$response = readline("ERASE THIS DISK?  E or [N],  A for abort:");
+			$response = substr(readline("ERASE THIS DISK?  E or [N],  A for abort:"),0,1);
 			if ($response === "a" || $response === "A")die("User Aborted!".PHP_EOL);
 			if ($response === "E" || $response === "e")
 			{
@@ -140,27 +140,34 @@ class drive
 				//exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, '/tmp/wipeout_'.$this->driveName, '/tmp/wipepid_'.$this->driveName));
 				system('touch /tmp/diskStart'.$this->driveName);
 				
+				echo'Estart';
+				sleep(1);
 				$this->mode = "eraseing";
 				return "erase";
 			}
 			elseif($this->mode === "eraseing")
 			{
+				//echo"Eopen ";
+				//sleep(10);
 				if($this->isRunning() == false)
 				{
-					if(file_exists('/tmp/diskStart'.$this->driveName))
+					//if(file_exists('/tmp/diskStart'.$this->driveName))
+					//{
+						//echo'e';
+						//sleep(1);
+					//}
+					//else
 					{
-						
-					}
-					else
-					{
+						echo'teststart';
+						sleep(1);
 						$this->mode = "test";
 						return "eraseing";
 					}
 				}
 				else
 				{
-					
-					
+					//echo"Erunning ";
+					//sleep(10);
 				}
 				$this->printDriveIdent("ERASING... ");
 				$handle = fopen("/tmp/diskOut".$this->driveName, "r");
@@ -169,21 +176,23 @@ class drive
 					echo fgets($handle); //Display Drive erase status
 					echo PHP_EOL;
 				}
+				return "eraseing";
 				
 				
 			}
 			elseif($this->mode === "test")
 			{
 				$cmd = 'smartctl '.$this->drivePath.'-C -t short';
-				exec(sprintf("$s > $s 2>&1 & echo $1", $cmd, '/tmp/wipeout_'.$this->driveName),$pidArr);
-				$this->pid = $pidArr[0];
+				shell_exec($cmd);
+				$this->pid = 0;
 				$this->mode = "testing";
 				$this->startTime = time();
 				return "test";
 			}
 			elseif($this->mode === "testing")
 			{
-				if($this->startTime + 300 < time())
+				$tr = $this->startTime + 300 - time();
+				if($tr < 0)
 				{
 					/*
 					 * Fatal or unknown error";        break;
@@ -320,7 +329,8 @@ class drive
 					$this->mode = "send";
 					return "send";
 				}//if($this->startTime + 300 < time())
-				$this->printDriveIdent("Testing Disk...");
+				$this->printDriveIdent("Testing Disk... $tr");
+				return "testing";
 			}
 			elseif($this->mode === "send")
 			{
@@ -329,13 +339,21 @@ class drive
 				
 				$diskDone = file_get_contents('/tmp/diskDone'.$this->driveName);
 				
-				if(strpos($diskDone,$passMessage) !== false)$state="p"; //p = pass,  everything erased that we can tell. Not valid for SSD's !!!
+				if(strpos($diskDone,$passMessage) !== false)
+				{
+					$state="p"; //p = pass,  everything erased that we can tell. Not valid for SSD's !!!
+					echo"PASSED WIPE".PHP_EOL;
+				}
 				
-				if($this->smartError === true)$state="e";//e = error in smart data, or cant fully erase
+				if($this->smartError === true)
+				{
+					$state="e";//e = error in smart data, or cant fully erase
+					echo"FAILED SMART".PHP_EOL;
+				}
 				
 				$crc = crc32($state.$this->family.$this->model.$this->serial.$this->size);
 				//prefix each option with a single pass fail Letter for security
-				system('curl "http://gfgdfserver/gfgdf/dataSubmit.php?family='.$state.$this->family.
+				$cmd = 'curl "http://gfgdfserver/gfgdf/dataSubmit.php?family='.$state.$this->family.
 				'&model='.$state.$this->model.
 				'&serial='.$state.$this->serial.
 				'&reallocSectCount='.$state.$this->smart_reallocSectCount.
@@ -343,7 +361,10 @@ class drive
 				'&reallocEventCount='.$state.$this->smart_reallocEventCount.
 				'&CurrentPendingCount='.$state.$this->smart_CurrentPendingCount.
 				'&offlineUncorrectCount='.$state.$this->smart_offlineUncorrectCount.
-				'&crc='.$crc.'"');
+				'&crc='.$crc.'"';
+				system($cmd);
+				echo $cmd.PHP_EOL;
+				sleep(300);
 				
 				$this->mode = 'read';
 				return "send";
@@ -358,9 +379,11 @@ class drive
 			{
 				return "done";
 			}
+			echo'fFalut';
 			return "fault";
 			
 		}
+		return "fault";
 	}
 	
 	//sudo udevadm info -q all -n /dev/sda | grep DEVPATH
@@ -378,17 +401,18 @@ echo "".PHP_EOL;
 echo "No warrenty given,  This may not work. And its not our fault!".PHP_EOL;
 echo "".PHP_EOL;
 echo "Network Status".PHP_EOL;
-//ifconfig
+system("ifconfig");
 echo "";
 echo "WARNING WARNING WARNING".PHP_EOL;
 echo "This program will erase all detected hard drives. Permanently!".PHP_EOL;
-$response = readline("Press Y to continue. [No] :");
+$response = substr(readline("Press Y to continue. [No] :"),0,1);
 echo "";
-if ($response != "Y" || $response != "y")
+if ($response !== 'Y' && $response !== 'y')
 {
 	echo "Disks not wiped. User canciled or didnt use an uppercase Y.".PHP_EOL;
 	echo "".PHP_EOL;
 	echo "type  gdelete.bash to rerun.".PHP_EOL;
+	die("end ");
 }
 $devices;
 chdir('/dev');
@@ -427,19 +451,29 @@ foreach($devices AS $thisDevice)
 $finished = false;
 while($finished == false)
 {
-	echo $header.PHP_EOL;
 	sleep(1);
 	system("clear");
+	echo $header.PHP_EOL;
 	$finished = true;
 	foreach($devices AS $thisDevice)
 	{
 		$ret = $thisDevice->processDisk();
-		if($ret != "done" || $ret != "fault") $finished = false;
+		if($ret !== "done" && $ret !== "fault")
+		{
+			$finished = false;
+		}
+		else
+		{
+			echo'finshed='.$ret.PHP_EOL;
+		}
 	}
 	
 }
 
-
+foreach($devices AS $thisDevice)
+{
+	$ret = $thisDevice->processDisk();
+}
 
 
 
