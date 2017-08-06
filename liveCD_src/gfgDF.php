@@ -92,8 +92,8 @@ class drive
 	
 	function printDriveIdent($state = "")
 	{
-		echo"Drive = ".$this->drivePath.' IS '.$this->family.';  '.$this->model.';  '.$this->serial.';  '.$this->size.PHP_EOL.
-		'pid='.$this->pid.'  '.$state.'  '.$this->HWPath.PHP_EOL;
+		echo"Drive = ".$this->drivePath.' IS '.$this->family.';  '.$this->model.';  '.$this->serial.';  '.$this->size.';  pid='.$this->pid.PHP_EOL
+		  .$state.'  '.$this->HWPath.PHP_EOL;
 	}
 	
 	function printPartitonInfo()
@@ -143,6 +143,7 @@ class drive
 				echo'Estart';
 				sleep(1);
 				$this->mode = "eraseing";
+				//$this->mode = "test";
 				return "erase";
 			}
 			elseif($this->mode === "eraseing")
@@ -191,7 +192,7 @@ class drive
 			}
 			elseif($this->mode === "testing")
 			{
-				$tr = $this->startTime + 300 - time();
+				$tr = $this->startTime + 30 - time();
 				if($tr < 0)
 				{
 					/*
@@ -216,6 +217,7 @@ class drive
 					
 					if(strpos($smartData,'PASSED') !== false)$this->smartError = false;// Must be found to be passing, or Fail drive
 					
+					echo "smartError1=".$this->smartError.PHP_EOL;
 					//all the rest must not be found
 					if(strpos($smartLog,'unknown failure') !== false)$this->smartError = true;
 					if(strpos($smartLog,'electrical failure') !== false)$this->smartError = true;
@@ -225,7 +227,7 @@ class drive
 					if(strpos($smartLog,'failure') !== false)$this->smartError = true;
 					if(strpos($smartLog,'unknown error') !== false)$this->smartError = true;
 					if(strpos($smartLog,'completed with error') !== false)$this->smartError = true;
-					
+					echo "smartError2=".$this->smartError.PHP_EOL;
 					
 					/*
 					 * seagate
@@ -263,6 +265,7 @@ class drive
 					$verifyedRealloc = 0;
 					foreach($attrLines AS $thisLine)
 					{
+						echo $thisLine.PHP_EOL;
 						$el['id'] = 0;
 						$el['name'] = 1;
 						$el['flag'] = 2;
@@ -273,59 +276,77 @@ class drive
 						$el['updated'] = 7;
 						$el['failedAt'] = 8;
 						$el['raw'] = 9;
-						
-						$elements = preg_split('/\s+/', $thisLine);
-						if(strpos($smartLog,'Reallocated_Sector_Ct') !== false)
+						//sleep(5);
+						$elements = preg_split('/\s+/', trim($thisLine));
+						//var_dump($elements);
+						//$elements = preg_split('/[\s]+/', $thisLine);
+						//var_dump($elements);
+						if(strpos($thisLine,'reallocated_sector_ct') !== false)
 						{
+							echo "FOUND reallocSectCount".PHP_EOL;
 							$verifyedAtribs++;
 							$verifyedRealloc++;
-							if( $elements[$el['value']] === '100' && $elements[$el['worst']] === '100' && $elements[$el['raw']] === '0' ) continue;
-							if( $elements[$el['value']] === '253' && $elements[$el['worst']] === '253' && $elements[$el['raw']] === '0' ) continue;
-							if( $elements[$el['value']] === '200' && $elements[$el['worst']] === '200' && $elements[$el['raw']] === '0' ) continue;
-							//if( $elements[$el['value']] === '100' && $elements[$el['worst']] === '100' && $elements[$el['raw']] === '0' ) continue;
-							$this->smart_reallocSectCount = 'V='.$elements[$el['value']].'W='.$elements[$el['worst']].'R='.$elements[$el['raw']];
+							$this->smart_reallocSectCount = 'V='.trim($elements[$el['value']]).'W='.trim($elements[$el['worst']]).'R='.trim($elements[$el['raw']]);
+							if( trim($elements[$el['value']]) === '100' && trim($elements[$el['worst']]) === '100' && ( trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'  )) continue;
+							if( trim($elements[$el['value']]) === '253' && trim($elements[$el['worst']]) === '253' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
+							if( trim($elements[$el['value']]) === '200' && trim($elements[$el['worst']]) === '200' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
+							//if( trim($elements[$el['value']]) === '100' && trim($elements[$el['worst']]) === '100' && trim($elements[$el['raw']]) === '0' ) continue;
+							
+							echo "reallocSectCount = error = ".$this->smart_reallocSectCount.PHP_EOL;
 							$this->smartError = true;
 						}
-						if(strpos($smartLog,'Reported_Uncorrect') !== false)
+						if(strpos($thisLine,'reported_uncorrect') !== false)
 						{
+						echo "FOUND uncorrectCount".PHP_EOL;
 							$verifyedAtribs++;
-							if( $elements[$el['value']] === '100' && $elements[$el['worst']] === '100' && $elements[$el['raw']] === '0' ) continue;
-							if( $elements[$el['value']] === '253' && $elements[$el['worst']] === '253' && $elements[$el['raw']] === '0' ) continue;
-							$this->smart_uncorrectCount = 'V='.$elements[$el['value']].'W='.$elements[$el['worst']].'R='.$elements[$el['raw']];
+							$this->smart_uncorrectCount = 'V='.trim($elements[$el['value']]).'W='.trim($elements[$el['worst']]).'R='.trim($elements[$el['raw']]);
+							if( trim($elements[$el['value']]) === '100' && trim($elements[$el['worst']]) === '100' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
+							if( trim($elements[$el['value']]) === '253' && trim($elements[$el['worst']]) === '253' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
+							
+							echo "uncorrectCount = error".$this->smart_uncorrectCount.PHP_EOL;
 							$this->smartError = true;
 						}
-						if(strpos($smartLog,'Reallocated_Event_Count') !== false)
+						if(strpos($thisLine,'reallocated_event_count') !== false)
 						{
+							echo "FOUND Reallocated_Event_Count".PHP_EOL;
 							$verifyedAtribs++;
-							if( $elements[$el['value']] === '100' && $elements[$el['worst']] === '100' && $elements[$el['raw']] === '0' ) continue;
-							if( $elements[$el['value']] === '253' && $elements[$el['worst']] === '253' && $elements[$el['raw']] === '0' ) continue;
-							$this->smart_reallocEventCount = 'V='.$elements[$el['value']].'W='.$elements[$el['worst']].'R='.$elements[$el['raw']];
+							$this->smart_reallocEventCount = 'V='.trim($elements[$el['value']]).'W='.trim($elements[$el['worst']]).'R='.trim($elements[$el['raw']]);
+							if( trim($elements[$el['value']]) === '100' && trim($elements[$el['worst']]) === '100' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
+							if( trim($elements[$el['value']]) === '253' && trim($elements[$el['worst']]) === '253' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
+							if( trim($elements[$el['value']]) === '200' && trim($elements[$el['worst']]) === '200' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
+							
+							echo "Reallocated_Event_Count = error".$this->smart_reallocEventCount.PHP_EOL;
 							$this->smartError = true;
 						}
-						if(strpos($smartLog,'Current_Pending_Sector') !== false)
+						if(strpos($thisLine,'current_pending_sector') !== false)
 						{
+							echo "FOUND Current_Pending_Sector".PHP_EOL;
 							$verifyedAtribs++;
-							if( $elements[$el['value']] === '100' && $elements[$el['worst']] === '100' && $elements[$el['raw']] === '0' ) continue;
-							if( $elements[$el['value']] === '253' && $elements[$el['worst']] === '253' && $elements[$el['raw']] === '0' ) continue;
-							if( $elements[$el['value']] === '200' && $elements[$el['worst']] === '200' && $elements[$el['raw']] === '0' ) continue;
-							$this->smart_CurrentPendingCount = 'V='.$elements[$el['value']].'W='.$elements[$el['worst']].'R='.$elements[$el['raw']];
+							$this->smart_CurrentPendingCount = 'V='.trim($elements[$el['value']]).'W='.trim($elements[$el['worst']]).'R='.trim($elements[$el['raw']]);
+							if( trim($elements[$el['value']]) === '100' && trim($elements[$el['worst']]) === '100' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
+							if( trim($elements[$el['value']]) === '253' && trim($elements[$el['worst']]) === '253' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
+							if( trim($elements[$el['value']]) === '200' && trim($elements[$el['worst']]) === '200' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
+							
+							echo "Current_Pending_Sector = error".$this->smart_CurrentPendingCount.PHP_EOL;
 							$this->smartError = true;
 						}
-						if(strpos($smartLog,'Offline_Uncorrectable') !== false)
+						if(strpos($thisLine,'offline_uncorrectable') !== false)
 						{
+							echo "FOUND Offline_Uncorrectable".PHP_EOL;
 							$verifyedAtribs++;
-							if( $elements[$el['value']] === '100' && $elements[$el['worst']] === '100' && $elements[$el['raw']] === '0' ) continue;
-							if( $elements[$el['value']] === '253' && $elements[$el['worst']] === '253' && $elements[$el['raw']] === '0' ) continue;
-							if( $elements[$el['value']] === '200' && $elements[$el['worst']] === '200' && $elements[$el['raw']] === '0' ) continue;
-							$this->smart_offlineUncorrectCount = 'V='.$elements[$el['value']].'W='.$elements[$el['worst']].'R='.$elements[$el['raw']];
+							$this->smart_offlineUncorrectCount = 'V='.trim($elements[$el['value']]).'W='.trim($elements[$el['worst']]).'R='.trim($elements[$el['raw']]);
+							if( trim($elements[$el['value']]) === '100' && trim($elements[$el['worst']]) === '100' && (trim($elements[$el['raw']]) === '0'  || trim($elements[$el['raw']]) === '000'  )) continue;
+							if( trim($elements[$el['value']]) === '253' && trim($elements[$el['worst']]) === '253' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
+							if( trim($elements[$el['value']]) === '200' && trim($elements[$el['worst']]) === '200' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
+							echo "Offline_Uncorrectable = error".$this->smart_offlineUncorrectCount.PHP_EOL;
 							$this->smartError = true;
 						}
 					}
 					// Reallocated Sectors is mandatory,  must have at least 2 other values good and 0 bad values
 					if($verifyedAtribs < 3 && $verifyedRealloc !== 1)$this->smartError = true;
+					echo "smartError3=".$this->smartError.PHP_EOL;
 					
-					
-					
+					sleep(10);
 					$this->mode = "send";
 					return "send";
 				}//if($this->startTime + 300 < time())
@@ -344,27 +365,34 @@ class drive
 					$state="p"; //p = pass,  everything erased that we can tell. Not valid for SSD's !!!
 					echo"PASSED WIPE".PHP_EOL;
 				}
+				//$state="p";
 				
 				if($this->smartError === true)
 				{
 					$state="e";//e = error in smart data, or cant fully erase
 					echo"FAILED SMART".PHP_EOL;
 				}
+				$crc = crc32(strtolower($state.$this->family.$this->model.$this->serial.$this->size));
+				$l_family = urlencode($this->family);
+				$l_model = urlencode($this->model);
+				$l_serial = urlencode($this->serial);
+				$l_size= urlencode($this->size);
 				
-				$crc = crc32($state.$this->family.$this->model.$this->serial.$this->size);
+				//$crc = crc32($state.$this->family.$this->model.$this->serial.$this->size);
 				//prefix each option with a single pass fail Letter for security
-				$cmd = 'curl "http://gfgdfserver/gfgdf/dataSubmit.php?family='.$state.$this->family.
-				'&model='.$state.$this->model.
-				'&serial='.$state.$this->serial.
-				'&reallocSectCount='.$state.$this->smart_reallocSectCount.
-				'&uncorrectCount='.$state.$this->smart_uncorrectCount.
-				'&reallocEventCount='.$state.$this->smart_reallocEventCount.
-				'&CurrentPendingCount='.$state.$this->smart_CurrentPendingCount.
-				'&offlineUncorrectCount='.$state.$this->smart_offlineUncorrectCount.
+				$cmd = 'curl "http://gfgdfserver/gfgdf/dataSubmit.php?family='.$state.$l_family.
+				'&model='.$state.$l_model.
+				'&serial='.$state.$l_serial.
+				'&size='.$state.$l_size.
+				'&reallocSectCount='.$state.urlencode($this->smart_reallocSectCount).
+				'&uncorrectCount='.$state.urlencode($this->smart_uncorrectCount).
+				'&reallocEventCount='.$state.urlencode($this->smart_reallocEventCount).
+				'&CurrentPendingCount='.$state.urlencode($this->smart_CurrentPendingCount).
+				'&offlineUncorrectCount='.$state.urlencode($this->smart_offlineUncorrectCount).
 				'&crc='.$crc.'"';
 				system($cmd);
 				echo $cmd.PHP_EOL;
-				sleep(300);
+				sleep(10);
 				
 				$this->mode = 'read';
 				return "send";
@@ -395,14 +423,17 @@ class drive
 
 system("clear");
 $header = "=== Geeks 4 God - United Methodist Church of the Resurrection ===".PHP_EOL.
-"=== DISK KILL AND TEST.  SECURE DRIVE ERASE. 07-22-2017===".PHP_EOL;
+"=== DISK KILL AND TEST.  SECURE DRIVE ERASE. 08-05-2017 ===".PHP_EOL;
 echo $header;
 echo "".PHP_EOL;
 echo "No warrenty given,  This may not work. And its not our fault!".PHP_EOL;
 echo "".PHP_EOL;
 echo "Network Status".PHP_EOL;
-system("ifconfig");
-echo "";
+$ipInfo = preg_split("/\r\n|\n|\r/",shell_exec("ifconfig"));
+echo $ipInfo[0].PHP_EOL;
+echo $ipInfo[1].PHP_EOL;
+echo $ipInfo[2].PHP_EOL;
+echo "".PHP_EOL;
 echo "WARNING WARNING WARNING".PHP_EOL;
 echo "This program will erase all detected hard drives. Permanently!".PHP_EOL;
 $response = substr(readline("Press Y to continue. [No] :"),0,1);
