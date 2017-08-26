@@ -110,7 +110,7 @@ crc=3417122026
 
 */
 
-echo strtolower($state.trim($family).trim($model).trim($serial).trim($size));
+//echo strtolower($state.trim($family).trim($model).trim($serial).trim($size));
 echo 'calc ='.crc32(strtolower($eraseState.$smartState.trim($family).trim($model).trim($serial).trim($size))).'<br>'.PHP_EOL;
 echo 'remt ='.$crc.'<br>'.PHP_EOL;
 

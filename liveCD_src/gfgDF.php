@@ -144,7 +144,7 @@ class drive
 				//exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, '/tmp/wipeout_'.$this->driveName, '/tmp/wipepid_'.$this->driveName));
 				system('touch /tmp/diskStart'.$this->driveName);
 				
-				echo'Estart';
+				echo'Erase Start. ';
 				sleep(1);
 				$this->mode = "eraseing";
 				//$this->mode = "test";
@@ -355,11 +355,12 @@ class drive
 					return "send";
 				}//if($this->startTime + 300 < time())
 				$this->printDriveIdent("Testing Disk... $tr");
+				echo PHP_EOL;
 				return "testing";
 			}
 			elseif($this->mode === "send")
 			{
-				$state="f"; //fail
+				
 				$passMessage = '===== PASSED,  Drive Erased';
 				
 				$diskDone = file_get_contents('/tmp/diskDone'.$this->driveName);
@@ -411,16 +412,16 @@ class drive
 			{
 				$l_model = urlencode($this->model);
 				$l_serial = urlencode($this->serial);
-			
+				
 				$contents = trim(file_get_contents('http://gfgdfserver/gfgdf/getRes.php?'.
-				'&model='.$state.$l_model.
-				'&serial='.$state.$l_serial));
+				'model='.$l_model.
+				'&serial='.$l_serial));
 				if($this->finalState == $contents)
 				{
 					$eraseState = substr($contents, 0,1);
 					$smartState = substr($contents, 1,2);
-					if($eraseState == "p" || $eraseState == "s") $this->finalMsg = "+++ PASSED +++ ERASED +++";
-					else if($eraseState == "p" || $eraseState != "s") $this->finalMsg = "+++ ERASED !!! SMART FAILURE !!! DISK FAILURE !!!";
+					if($eraseState === "p" || $smartState === "s") $this->finalMsg = "+++ PASSED +++ ERASED +++";
+					else if($eraseState === "p" || $smartState !== "s") $this->finalMsg = "+++ ERASED !!! SMART FAILURE !!! DISK FAILURE !!!";
 					else $this->finalMsg = "!!! WIPE FAILURE !!! SMART FAILURE !!! DISK FAILURE !!!";
 				}
 				else
@@ -433,6 +434,7 @@ class drive
 			elseif($this->mode === "done")
 			{
 				$this->printDriveIdent($this->finalMsg);
+				echo PHP_EOL;
 				return "done";
 			}
 			echo'fFalut';
@@ -440,6 +442,28 @@ class drive
 			
 		}
 		return "fault";
+	}
+	function killProcessByDiskName($name)
+	{
+		if($this->driveName === $name)
+		{
+			$pid = $this->pid;
+			if($pid !== 0)
+			{
+				$this->mode = 'done';
+				system('kill '.$pid);
+				$this->finalMsg = "!!!!!!!!ABORTED MID ERASE!!!!!!!!";
+				echo PHP_EOL;
+				$this->printDriveIdent($this->finalMsg);
+				sleep(5);
+				echo PHP_EOL;
+			}
+			else echo "Nothing to Abort, Disk is probably erased and in testing or finished!";
+			sleep(5);
+			return true;
+		}
+		
+		return false;
 	}
 	
 	//sudo udevadm info -q all -n /dev/sda | grep DEVPATH
@@ -451,7 +475,7 @@ class drive
 
 system("clear");
 $header = "=== Geeks 4 God - United Methodist Church of the Resurrection ===".PHP_EOL.
-"=== DISK KILL AND TEST.  SECURE DRIVE ERASE. 08-12-2017 ===".PHP_EOL;
+"=== DISK KILL AND TEST.  SECURE DRIVE ERASE. 08-26-2017 ===".PHP_EOL;
 echo $header;
 echo "".PHP_EOL;
 echo "No warrenty given,  This may not work. And its not our fault!".PHP_EOL;
@@ -489,6 +513,7 @@ foreach($fileDevice_h AS $thisDevice)
 			$devices[$thisDevice->getFilename()] = new drive($thisDevice->getPathname(),$thisDevice->getFilename());
 		}
 	}
+	
 }
 
 if(empty($devices)) die( "No hard drives found!".PHP_EOL);
@@ -504,13 +529,42 @@ foreach($devices AS $thisDevice)
 	$thisDevice->AnswerDisk();
 }
 
+function nonBlockingReadLineFromStdIn()
+{
+	$read = array(STDIN);
+	$write = array();
+	$except = array();
 
+	//var_dump('Before stream select.');
+	$result = stream_select($read, $write, $except, 5);
+	//var_dump('After stream select.', $result);
+
+	if ($result === false) {
+		throw new RunTimeException("Can not select stream STDIN");
+	}
+
+	if ($result === 0) {
+		return false;
+	}
+
+	//var_dump('Before get line.');
+	$getLine = stream_get_line(STDIN, 1);
+	//var_dump('After get line.', $getLine);
+
+	return $getLine;
+}
+
+//$fp=fopen('php://stdin','r');
+//stream_set_timeout($fp,5);
+//stream_set_blocking($fp,false);
 
 //Erase Disk
 $finished = false;
 while($finished == false)
 {
-	sleep(1);
+	//sleep(5);
+	//$charIn = fgetc($fp);
+	$charIn = nonBlockingReadLineFromStdIn();
 	system("clear");
 	echo $header.PHP_EOL;
 	$finished = true;
@@ -525,6 +579,29 @@ while($finished == false)
 		{
 			echo'finshed='.$ret.PHP_EOL;
 		}
+	}
+	//stream_select (array(STDIN),array(),array(),5);
+	echo "==  TYPE K to end a process that has failed. ==".PHP_EOL;
+	if($charIn === 'k')
+	{
+		$in = trim(readline('Enter the disk name to abort, ie sde, All others resume.: '));
+		if(strlen($in) == 3 )
+		{
+			$prefix = substr($in, 0,2);
+			if($prefix == 'sd')
+			{
+				echo 'TERM '.$in;
+				sleep(1);
+				foreach($devices AS $thisDevice)
+				{
+					if ( $thisDevice->killProcessByDiskName($in) == true ) break;
+				}
+			}
+		}
+	}
+	else
+	{
+		//echo "chars = ".$charIn;
 	}
 	
 }

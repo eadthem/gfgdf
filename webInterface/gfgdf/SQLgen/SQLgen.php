@@ -327,7 +327,7 @@ function selectDistinctsFrom($fromtable)//STEP 1//FROM # USE GROUP BY TO DEFINE 
  function ValueWrite($string)//write with sanatisation //WITH QUOTES //untell null
 {
 	include 'SQLStatements.php';
-	if(is_string($string))
+	if(is_string($string) || empty($string) )
 	{
 		$this->_buffer[$this->_WritePos]=$SQLGEN_stdDataIsolator;$this->_WritePos++;
 		$this->ValueWriteNQ($string);

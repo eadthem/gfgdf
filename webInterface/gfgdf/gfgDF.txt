@@ -413,7 +413,7 @@ class drive
 				$l_serial = urlencode($this->serial);
 			
 				$contents = trim(file_get_contents('http://gfgdfserver/gfgdf/getRes.php?'.
-				'&model='.$state.$l_model.
+				'model='.$state.$l_model.
 				'&serial='.$state.$l_serial));
 				if($this->finalState == $contents)
 				{
