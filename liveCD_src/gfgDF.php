@@ -1,5 +1,19 @@
 #!/usr/bin/php
 <?php
+//unit tests
+function stringIsInString($haystack,$needle)
+{
+	if(strpos($haystack, $needle) !== false) return true;
+	return false;
+}
+{
+	$UT_family = "Hitachi Travelstar 7K500";
+	if(stringIsInString($UT_family, "7K500"));
+	else die("UnitTest FAILURE Program is unreliable!!!, 7K500 Test.UT FAILURE, 7K500 Test.".PHP_EOL."UT FAILURE, 7K500 Test.UT FAILURE, 7K500 Test.".PHP_EOL);
+}
+
+
+
 class drive
 {
 	public $drivePath;
@@ -294,6 +308,7 @@ class drive
 							if( trim($elements[$el['value']]) === '100' && trim($elements[$el['worst']]) === '100' && ( trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'  )) continue;
 							if( trim($elements[$el['value']]) === '253' && trim($elements[$el['worst']]) === '253' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
 							if( trim($elements[$el['value']]) === '200' && trim($elements[$el['worst']]) === '200' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
+							if( trim($elements[$el['value']]) === '252' && trim($elements[$el['worst']]) === '252' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue; //Samsung
 							//if( trim($elements[$el['value']]) === '100' && trim($elements[$el['worst']]) === '100' && trim($elements[$el['raw']]) === '0' ) continue;
 							
 							echo "reallocSectCount = error = ".$this->smart_reallocSectCount.PHP_EOL;
@@ -306,7 +321,7 @@ class drive
 							$this->smart_uncorrectCount = 'V='.trim($elements[$el['value']]).'W='.trim($elements[$el['worst']]).'R='.trim($elements[$el['raw']]);
 							if( trim($elements[$el['value']]) === '100' && trim($elements[$el['worst']]) === '100' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
 							if( trim($elements[$el['value']]) === '253' && trim($elements[$el['worst']]) === '253' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
-							
+							if( trim($elements[$el['value']]) === '100' && stringIsInString($this->family, "7K500"))continue; //Skip uncorrectable count on this model of hitachi drives,  as its a down counter.
 							echo "uncorrectCount = error".$this->smart_uncorrectCount.PHP_EOL;
 							$this->smartError = true;
 						}
@@ -318,7 +333,7 @@ class drive
 							if( trim($elements[$el['value']]) === '100' && trim($elements[$el['worst']]) === '100' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
 							if( trim($elements[$el['value']]) === '253' && trim($elements[$el['worst']]) === '253' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
 							if( trim($elements[$el['value']]) === '200' && trim($elements[$el['worst']]) === '200' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
-							
+							if( trim($elements[$el['value']]) === '252' && trim($elements[$el['worst']]) === '252' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;//Samsung
 							echo "Reallocated_Event_Count = error".$this->smart_reallocEventCount.PHP_EOL;
 							$this->smartError = true;
 						}
@@ -330,7 +345,7 @@ class drive
 							if( trim($elements[$el['value']]) === '100' && trim($elements[$el['worst']]) === '100' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
 							if( trim($elements[$el['value']]) === '253' && trim($elements[$el['worst']]) === '253' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
 							if( trim($elements[$el['value']]) === '200' && trim($elements[$el['worst']]) === '200' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
-							
+							if( trim($elements[$el['value']]) === '252' && trim($elements[$el['worst']]) === '252' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;//Samsung
 							echo "Current_Pending_Sector = error".$this->smart_CurrentPendingCount.PHP_EOL;
 							$this->smartError = true;
 						}
@@ -341,7 +356,9 @@ class drive
 							$this->smart_offlineUncorrectCount = 'V='.trim($elements[$el['value']]).'W='.trim($elements[$el['worst']]).'R='.trim($elements[$el['raw']]);
 							if( trim($elements[$el['value']]) === '100' && trim($elements[$el['worst']]) === '100' && (trim($elements[$el['raw']]) === '0'  || trim($elements[$el['raw']]) === '000'  )) continue;
 							if( trim($elements[$el['value']]) === '253' && trim($elements[$el['worst']]) === '253' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
-							if( trim($elements[$el['value']]) === '200' && trim($elements[$el['worst']]) === '200' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;
+							if( trim($elements[$el['value']]) === '100' && trim($elements[$el['worst']]) === '253' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;//2.5" wd blue
+							if( trim($elements[$el['value']]) === '200' && trim($elements[$el['worst']]) === '200' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;//fujitsu
+							if( trim($elements[$el['value']]) === '252' && trim($elements[$el['worst']]) === '252' && (trim($elements[$el['raw']]) === '0' || trim($elements[$el['raw']]) === '000'   )) continue;//Samsung
 							echo "Offline_Uncorrectable = error".$this->smart_offlineUncorrectCount.PHP_EOL;
 							$this->smartError = true;
 						}
@@ -475,7 +492,7 @@ class drive
 
 system("clear");
 $header = "=== Geeks 4 God - United Methodist Church of the Resurrection ===".PHP_EOL.
-"=== DISK KILL AND TEST.  SECURE DRIVE ERASE. 08-26-2017 ===".PHP_EOL;
+"=== DISK KILL AND TEST.  SECURE DRIVE ERASE. 11-04-2017 ===".PHP_EOL;
 echo $header;
 echo "".PHP_EOL;
 echo "No warrenty given,  This may not work. And its not our fault!".PHP_EOL;
