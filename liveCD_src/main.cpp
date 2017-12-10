@@ -299,17 +299,17 @@ int main(int argc, char* argv[])
 		writeFinalMessage(finalMessage,path);
 		return 1;  //Error
 	}
-	else if(speedMBperSec > 120)//Do not exeed 100MB per sec, Or are we really wiping?
-	{//This threshold is tight for a reason,  In practice no single drive should be more than 100MBPS
+	else if(speedMBperSec > 180)//Do not exeed 180MB per sec, Or are we really wiping?
+	{//This threshold is tight for a reason,  In practice no single drive should be more than 180MBPS
 		//as we are counting the verify time, but not its data xfer.
-		snprintf(finalMessage,120,"!!!!! FAILURE, Drive impossibly fast, %iMBps > 120MBps FAILURE !!!!!\n!!!!!!!!!!!!!!DRIVE NOT WIPED!!!!!!!!!!!!!!\n",speedMBperSec);
+		snprintf(finalMessage,180,"!!!!! FAILURE, Drive impossibly fast, %iMBps > 180MBps FAILURE !!!!!\n!!!!!!!!!!!!!!DRIVE NOT WIPED!!!!!!!!!!!!!!\n",speedMBperSec);
 		writeFinalMessage(finalMessage,path);
 		return 1;  //Error
 	}
 	else
 	{
 		int elapsedTimeMin = elapsedTimeSeconds/60;
-		snprintf(finalMessage,120,"%s: in %i Min, %i MBps =====\n",passedMessage,elapsedTimeMin,speedMBperSec);
+		snprintf(finalMessage,120,"%s: in %i Min, *%i* MBps =====\n",passedMessage,elapsedTimeMin,speedMBperSec);
 		writeFinalMessage(finalMessage,path);
 	}
 

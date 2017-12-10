@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS `disk_log` (
   `reallocatedEventCount` char(24) NOT NULL,
   `currentPendingSectCount` char(24) NOT NULL,
   `offlineUncorrectableCount` char(24) NOT NULL
+  `diskTestSpeedMBps` char(24) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

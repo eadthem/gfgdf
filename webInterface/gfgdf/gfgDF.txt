@@ -36,6 +36,8 @@ class drive
 	public $smart_offlineUncorrectCount;
 	public $finalState;
 	public $finalMsg;
+	public $speed;
+	public $networkRetryCount;
 	
 	function isRunning()
 	{
@@ -52,6 +54,7 @@ class drive
 	
 	function __construct($drivePath,$driveName)
 	{
+		$this->networkRetryCount =0;
 		$this->startTime;
 		$this->pid = 0;
 		$this->mode="fault";
@@ -61,6 +64,7 @@ class drive
 		$this->driveName = $driveName;
 		$this->smartError == true;
 		$this->erased == false;
+		$this->speed == "";
 		
 		$this->HWPath = substr(trim(shell_exec('udevadm info -q all -n '.$this->drivePath.' | grep DEVPATH')),3);
 		
@@ -382,6 +386,8 @@ class drive
 				
 				$diskDone = file_get_contents('/tmp/diskDone'.$this->driveName);
 				
+				$this->speed = str_getcsv($diskDone,"*");
+				
 				if(strpos($diskDone,$passMessage) !== false)
 				{
 					$state="p"; //p = pass,  everything erased that we can tell. Not valid for SSD's !!!
@@ -416,7 +422,8 @@ class drive
 				'&reallocEventCount='.$state.urlencode($this->smart_reallocEventCount).
 				'&CurrentPendingCount='.$state.urlencode($this->smart_CurrentPendingCount).
 				'&offlineUncorrectCount='.$state.urlencode($this->smart_offlineUncorrectCount).
-				'&crc='.$crc.'"';
+				'&crc='.$crc.
+				'&speed='.$this->speed.'"';
 				system($cmd);
 				echo $cmd.PHP_EOL;
 				sleep(10);
@@ -438,12 +445,20 @@ class drive
 					$eraseState = substr($contents, 0,1);
 					$smartState = substr($contents, 1,2);
 					if($eraseState === "p" || $smartState === "s") $this->finalMsg = "+++ PASSED +++ ERASED +++";
-					else if($eraseState === "p" || $smartState !== "s") $this->finalMsg = "+++ ERASED !!! SMART FAILURE !!! DISK FAILURE !!!";
+					else if($eraseState === "p" || $smartState !== "s") $this->finalMsg = "+++ ERASED ++! SMART FAILURE !!! DISK FAILURE !!!";
+					else if($eraseState !== "p" || $smartState === "s") $this->finalMsg = "!!! WIPE FAILURE !!! CONTAINS DATA !++ SMART OK +++";
 					else $this->finalMsg = "!!! WIPE FAILURE !!! SMART FAILURE !!! DISK FAILURE !!!";
+				}
+				elseif($this->networkRetryCount < 5)
+				{
+					$this->finalMsg = "!!! SERVER COM FAILURE !!!";
+					sleep(5);
+					$this->mode = "send";
+					return "send";
 				}
 				else
 				{
-					$this->finalMsg = "!!! WIPE FAILURE !!! SMART FAILURE !!! DISK FAILURE !!! SERVER COM FAILURE !!!";
+					$this->finalMsg = "!!! SERVER COM FAILURE !!! 5 TRYS NO SERVER !!!";
 				}
 				$this->mode = 'done';
 				return "read";
@@ -497,7 +512,7 @@ echo $header;
 echo "".PHP_EOL;
 echo "No warrenty given,  This may not work. And its not our fault!".PHP_EOL;
 echo "".PHP_EOL;
-echo "Network Status".PHP_EOL;
+echo "NETWORK STATUS".PHP_EOL;
 $ipInfo = preg_split("/\r\n|\n|\r/",shell_exec("ifconfig"));
 echo $ipInfo[0].PHP_EOL;
 echo $ipInfo[1].PHP_EOL;

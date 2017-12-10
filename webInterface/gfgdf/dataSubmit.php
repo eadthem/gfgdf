@@ -46,7 +46,8 @@ $_offlineUncorrectCount=$_GET['offlineUncorrectCount'];
 if(!isset($_GET['offlineUncorrectCount']))die('Format Error');
 $crc=$_GET['crc'];
 if(!isset($_GET['crc']))die('Format Error');
-
+$speed = "";
+if(!isset($_GET['speed']))$speed=$_GET['speed'];
 
 
 $_family_code = substr($_family, 0,2);
@@ -58,6 +59,7 @@ $_uncorrectCount_code = substr($_uncorrectCount, 0,2);
 $_reallocEventCount_code = substr($_reallocEventCount, 0,2);
 $_CurrentPendingCount_code = substr($_CurrentPendingCount, 0,2);
 $_offlineUncorrectCount_code = substr($_offlineUncorrectCount, 0,2);
+
 
 $contents="";
 //state   ps   Pass erase  Pass Smart
@@ -137,6 +139,7 @@ $q->addCSVcol("uncorrectableSectCount");
 $q->addCSVcol("reallocatedEventCount");
 $q->addCSVcol("currentPendingSectCount");
 $q->addCSVcol("offlineUncorrectableCount");
+$q->addCSVcol("diskTestSpeedMBps");
 $q->insertPartialVALUES();
 $q->addCSVAutoincrment();
 $q->addCSVCurrentTimestamp();
@@ -156,6 +159,7 @@ $q->addCSVvalue($uncorrectCount);//$q->addCSVcol("uncorrectableSectCount");
 $q->addCSVvalue($reallocEventCount);//$q->addCSVcol("reallocatedEventCount");
 $q->addCSVvalue($CurrentPendingCount);//$q->addCSVcol("currentPendingSectCount");
 $q->addCSVvalue($offlineUncorrectCount);//$q->addCSVcol("offlineUncorrectableCount");
+$q->addCSVvalue($speed);
 $q->enddbg();
 $connection->query($q->_buffer);
 
