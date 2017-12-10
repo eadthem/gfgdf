@@ -386,7 +386,8 @@ class drive
 				
 				$diskDone = file_get_contents('/tmp/diskDone'.$this->driveName);
 				
-				$this->speed = str_getcsv($diskDone,"*");
+				$speed_arr = str_getcsv($diskDone,"*");
+				if(count($speed_arr) == 3) $this->speed = $speed_arr[1];
 				
 				if(strpos($diskDone,$passMessage) !== false)
 				{
@@ -451,6 +452,7 @@ class drive
 				}
 				elseif($this->networkRetryCount < 5)
 				{
+					$this->networkRetryCount++;
 					$this->finalMsg = "!!! SERVER COM FAILURE !!!";
 					sleep(5);
 					$this->mode = "send";
